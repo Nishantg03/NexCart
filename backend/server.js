@@ -11,11 +11,45 @@ import Orderrouter from './routes/orderRoute.js';
 
 // app configuration
 const app = express();
-const port = process.env.PORT || 5000;
+
+let connectionsReady;
+
+const ensureConnections = async () => {
+    if (!connectionsReady) {
+        connectionsReady = (async () => {
+            try {
+                await connectDB();
+                console.log('✅ Database connected successfully');
+            } catch (err) {
+                console.error('❌ Error connecting to MongoDB:', err);
+                throw err;
+            }
+
+            try {
+                connectCloudinary();
+                console.log('✅ Cloudinary connected successfully');
+            } catch (err) {
+                console.error('❌ Error connecting to Cloudinary:', err);
+                throw err;
+            }
+        })();
+    }
+
+    return connectionsReady;
+};
 
 // middlewares
 app.use(express.json());
 app.use(cors());
+
+app.use(async (req, res, next) => {
+    try {
+        await ensureConnections();
+        next();
+    } catch (err) {
+        next(err);
+    }
+});
 
 //apis endpoints
 app.use('/api/users', userRouter);
@@ -27,25 +61,9 @@ app.get('/', (req, res) => {
     res.send('API WORKING');
 });
 
-// Initialize database connections and start server
-(async () => {
-    try {
-        await connectDB();
-        console.log('✅ Database connected successfully');
-    } catch (err) {
-        console.error('❌ Error connecting to MongoDB:', err);
-        process.exit(1);
-    }
-    try {
-        connectCloudinary();
-        console.log('✅ Cloudinary connected successfully');
-    } catch (err) {
-        console.error('❌ Error connecting to Cloudinary:', err);
-        process.exit(1);
-    }
-    
-    // Start server only after connections are ready
-    app.listen(port, () => {
-        console.log(`✅ Server is running on port ${port}`);
-    });
-})();
+app.use((err, req, res, next) => {
+    console.error('❌ Request failed:', err);
+    res.status(500).json({ success: false, message: 'Internal server error' });
+});
+
+export default app;
