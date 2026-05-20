@@ -8,10 +8,11 @@ const LatestCollection = () => {
   const { products = [] } = context
   const [latestProducts, setLatestProducts] = useState([])
   
+  // Initialize latest products only once
   useEffect(() => {
-    if (products && products.length > 0) {
-      const shuffled = [...products].sort(() => Math.random() - 0.5)
-      setLatestProducts(shuffled.slice(0, 10))
+    if (products && products.length > 0 && latestProducts.length === 0) {
+      const latest = products.slice(0, 10)
+      setLatestProducts(latest)
     }
   }, [products])
 

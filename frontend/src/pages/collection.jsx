@@ -1,173 +1,145 @@
-import React, { use, useContext, useState, useEffect } from 'react'
+import React, { useContext, useState, useEffect } from 'react'
 import { ShopContext } from '../context/ShopContext'
-import Title from '../components/Title'
 import { Link } from 'react-router-dom'
+import heroBanner1 from '../assets/download (1).jpeg'
+import heroBanner2 from '../assets/download (2).jpeg'
+import heroBanner3 from '../assets/download (3).jpeg'
+import heroBanner4 from '../assets/download (4).jpeg'
 
 const Collection = () => {
   const context = useContext(ShopContext)
   const products = context?.products || []
-  const { search, showsearch } = context;
-  const[category,setCategory] = useState([]);
-  const[subCategory,setSubCategory] = useState([]);
-  const[filterProducts,setFilterProducts] = useState([]);
-  const[sortBy,setSortBy] = useState('relevant');
+  const { fetchProducts, addtocart } = context || {}
 
-  const toggleCategory = (e) => {
-    if(category.includes(e.target.value)){
-        setCategory(prev=>prev.filter((item)=> item !== e.target.value))
-    }
-    else{
-        setCategory(prev=>[...prev,e.target.value])   
-    }
-  }
+  const [category, setCategory] = useState([])
+  const [subCategory, setSubCategory] = useState([])
+  const [filterProducts, setFilterProducts] = useState([])
+  const [sortBy, setSortBy] = useState('relevant')
+  const [currentPage, setCurrentPage] = useState(1)
+  const [hoveredProduct, setHoveredProduct] = useState(null)
+  const productsPerPage = 12
 
-  const toggleSubCategory = (e) => {
-    if(subCategory.includes(e.target.value)){
-        setSubCategory(prev=>prev.filter((item)=> item !== e.target.value))
-    }
-    else{
-        setSubCategory(prev=>[...prev,e.target.value])   
-    }
-  }
+  const heroImages = [
+    { src: heroBanner1, alt: 'Fashion campaign in a blue sky setting' },
+    { src: heroBanner2, alt: 'Fashion campaign in a sculptural green landscape' },
+    { src: heroBanner3, alt: 'Fashion campaign on sunlit rocks' },
+    { src: heroBanner4, alt: 'Fashion campaign with cloud-inspired styling' },
+  ]
 
   useEffect(() => {
-    applyFilters(products);
-  }, [category, subCategory, search, showsearch]);
+    fetchProducts?.()
+  }, [fetchProducts])
 
   useEffect(() => {
-    if(sortBy === 'relevant') {
-      applyFilters(products);
-    } else {
-      applySorting(filterProducts);
+    // derive filtered products from products + filters
+    let res = Array.isArray(products) ? [...products] : []
+    if (category.length) {
+      res = res.filter((p) => category.includes(String(p.category || '').toLowerCase()))
     }
-  }, [sortBy]);
+    if (subCategory.length) {
+      res = res.filter((p) => subCategory.includes(String(p.subCategory || p.subcategory || '').toLowerCase()))
+    }
+    // sorting
+    if (sortBy === 'price-low') res.sort((a, b) => a.price - b.price)
+    else if (sortBy === 'price-desc' || sortBy === 'price-high') res.sort((a, b) => b.price - a.price)
+    else if (sortBy === 'newest') res.sort((a, b) => new Date(b.createdAt || b.date || 0) - new Date(a.createdAt || a.date || 0))
 
-const applyFilters = (products) => {
-    let Productscopy = products.slice();  
-    
-    if(search && showsearch){
-      Productscopy = Productscopy.filter((item) => item.name.toLowerCase().includes(search.toLowerCase()));
-    }
-    
-    if(category.length > 0){
-        Productscopy = Productscopy.filter((item)=> category.includes(item.category))
-    }
-    if(subCategory.length > 0){
-        Productscopy = Productscopy.filter((item)=> subCategory.includes(item.subCategory))
-    }
-    setFilterProducts(Productscopy);
+    setFilterProducts(res)
+    setCurrentPage(1)
+  }, [products, category, subCategory, sortBy])
+
+  const toggleCategory = (value) => {
+    const key = String(value).toLowerCase()
+    setCategory((prev) => (prev.includes(key) ? prev.filter((v) => v !== key) : [...prev, key]))
+  }
+  const toggleSubCategory = (value) => {
+    const key = String(value).toLowerCase()
+    setSubCategory((prev) => (prev.includes(key) ? prev.filter((v) => v !== key) : [...prev, key]))
   }
 
-const applySorting = (products) => {
-    let sortedProducts = [...products];
-    switch(sortBy) {
-      case 'price-low':
-        sortedProducts.sort((a, b) => a.price - b.price);
-        break;
-      case 'price-high':
-        sortedProducts.sort((a, b) => b.price - a.price);
-        break;
-      case 'newest':
-        sortedProducts.reverse();
-        break;
-      case 'best-sellers':
-        sortedProducts.sort((a, b) => (b.bestseller ? 1 : 0) - (a.bestseller ? 1 : 0));
-        break;
-      case 'relevant':
-      default:
-        break;
-    }
-    setFilterProducts(sortedProducts);
-  }
-
+  const totalPages = Math.max(1, Math.ceil(filterProducts.length / productsPerPage))
+  const start = (currentPage - 1) * productsPerPage
+  const paginatedProducts = filterProducts.slice(start, start + productsPerPage)
 
   return (
-    <div className='flex gap-10 pt-32 pb-16 text-semibold' style={{margin:'0 15px'}}>
-      {/* Filter Section Left */}
-      <div className='w-64'>
-        <p className='text-3xl  tracking-wide mb-8' style={{marginTop:'72px',fontWeight:'500',fontFamily:'Arial, sans-serif'}}>FILTERS</p>
-        
-        {/* Category Filter - Boxed */}
-        <div className='border border-gray-200 rounded-xl p-8 bg-white shadow-sm hover:shadow-md transition-shadow mb-8' style={{marginTop:'45px'}}>
-          <h3 className='text-sm font-light tracking-wider uppercase mb-6 pb-4 text-gray-800 border-b border-gray-200' style={{paddingLeft:'20px',marginTop:'14px',fontWeight:'500'}}>Categories</h3>
-          <div className='space-y-3'>
-            <label className='flex items-center cursor-pointer group' style={{marginLeft:'15px'}}>
-              <input type="checkbox" className='w-4 h-4 rounded border-gray-300 accent-black' value="Men" onChange={toggleCategory}/>
-              <span className='ml-3 text-sm font-light text-gray-700 group-hover:text-gray-900 transition-colors'
-               style={{marginLeft:'10px',marginTop:'2px',fontWeight:'400'}}>Men</span>
-            </label>
-            <label className='flex items-center cursor-pointer group' style={{marginLeft:'15px'}}>
-              <input type="checkbox" className='w-4 h-4 rounded border-gray-300 accent-black' value="Women" onChange={toggleCategory}/>
-              <span className='ml-3 text-sm font-light text-gray-700 group-hover:text-gray-900 transition-colors' 
-              style={{marginLeft:'10px',marginTop:'2px',fontWeight:'400'}}>Women</span>
-            </label>
-            <label className='flex items-center cursor-pointer group' style={{marginLeft:'15px'}}>
-              <input type="checkbox" className='w-4 h-4 rounded border-gray-300 accent-black' value="Kids" onChange={toggleCategory}/>
-              <span className='ml-3 text-sm font-light text-gray-700 group-hover:text-gray-900 transition-colors'
-               style={{marginBottom:'10px',marginLeft:'10px',marginTop:'2px',fontWeight:'400'  }}>Kids</span>
-            </label>
+    <div className="collection-page">
+      <section className="collection-hero">
+        <div className="collection-hero-inner">
+          <div className="collection-hero-copy">
+            <div className="collection-hero-badge">New Season</div>
+            <h1 className="collection-hero-title">Style for Every Story</h1>
+            <p className="collection-hero-subtitle">From everyday staples to statement pieces — explore our curated collection for men, women, and children.</p>
+          </div>
+          <div className="collection-hero-gallery">
+            {heroImages.slice(0,4).map((h,i)=>(
+              <div key={i} className="collection-hero-tile">
+                <img src={h.src} alt={h.alt} className="collection-hero-image"/>
+              </div>
+            ))}
           </div>
         </div>
+      </section>
 
-        {/* Sub-Category Filter - Boxed */}
-        <div className='border border-gray-200 rounded-xl p-8 bg-white shadow-sm hover:shadow-md transition-shadow' style={{marginTop:'45px'}}>
-          <h3 className='text-sm font-light tracking-wider uppercase mb-6 pb-4 text-gray-800 border-b border-gray-200' style={{paddingLeft:'20px',marginTop:'14px'  ,fontWeight:'500'}}>Type</h3>
-          <div className='space-y-3'>
-            <label className='flex items-center cursor-pointer group' style={{marginLeft:'15px'}}>
-              <input type="checkbox" className='w-4 h-4 rounded border-gray-300 accent-black' value="Topwear" onChange={toggleSubCategory}/>
-              <span className='ml-3 text-sm font-light text-gray-700 group-hover:text-gray-900 transition-colors' 
-              style={{marginLeft:'10px',marginTop:'2px',fontWeight:'400'}}>Topwear</span>
-            </label>
-            <label className='flex items-center cursor-pointer group' style={{marginLeft:'15px'}}>
-              <input type="checkbox" className='w-4 h-4 rounded border-gray-300 accent-black' value="Bottomwear" onChange={toggleSubCategory}/>
-              <span className='ml-3 text-sm font-light text-gray-700 group-hover:text-gray-900 transition-colors' 
-              style={{marginLeft:'10px',marginTop:'2px',fontWeight:'400'   }}>Bottomwear</span>
-            </label>
-            <label className='flex items-center cursor-pointer group' style={{marginLeft:'15px'}}>
-              <input type="checkbox" className='w-4 h-4 rounded border-gray-300 accent-black' value="Winterwear" onChange={toggleSubCategory}/>
-              <span className='ml-3 text-sm font-light text-gray-700 group-hover:text-gray-900 transition-colors' style={{ marginBottom:'10px',marginLeft:'10px',marginTop:'2px',fontWeight:'400'}}>Winterwear</span>
-            </label>
+      <div style={{maxWidth:1200,margin:'24px auto',padding:'0 16px'}}>
+        <div className="collection-toolbar">
+          <div className="collection-filters">
+            <button onClick={()=>toggleCategory('men')} className={`filter-pill ${category.includes('men')? 'active':''}`}>Men</button>
+            <button onClick={()=>toggleCategory('women')} className={`filter-pill ${category.includes('women')? 'active':''}`}>Women</button>
+            <button onClick={()=>toggleCategory('kids')} className={`filter-pill ${category.includes('kids')? 'active':''}`}>Kids</button>
           </div>
-        </div>
-      </div>
-
-      {/* Products Section Right */}
-      <div className='flex-1'>
-        {/* Title and Sort Box Container */}
-        <div className='flex items-end justify-between mb-10' style={{marginTop:'72px'}}>
-          {/* Title */}
-          <div className='mb-20 scale-150 origin-left'>
-            <Title text1="ALL" text2="COLLECTIONS" />
-          </div>
-          
-          {/* Sort Box */}
-          <div className='mb-4'>
-            <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className='border border-2 border-black px-8 py-3 text-base font-semibold bg-white cursor-pointer hover:border-gray-800 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-300 text-black'>
-              <option value="relevant">Sort By: Relevant</option>
+          <div className="collection-sorter">
+            <select value={sortBy} onChange={(e)=>setSortBy(e.target.value)} className="collection-sort-select">
+              <option value="relevant">Featured</option>
+              <option value="newest">Newest</option>
               <option value="price-low">Price: Low to High</option>
-              <option value="price-high">Price: High to Low</option>
-              <option value="newest">Newest First</option>
-              <option value="best-sellers">Best Sellers</option>
+              <option value="price-desc">Price: High to Low</option>
             </select>
           </div>
         </div>
 
-        <div className='grid grid-cols-5 gap-4'>
-          {filterProducts && filterProducts.length > 0 ? (
-            filterProducts.map((item) => (
-              <Link key={item._id} to={`/product/${item._id}`} className='group cursor-pointer'>
-                <div className='relative overflow-hidden rounded-lg mb-3 bg-gray-100' style={{marginTop:'50px'}}>
-                  <img src={item.image[0]} alt={item.name} className='w-full h-auto object-contain group-hover:scale-105 transition-transform duration-300' />
+        <main>
+          <div className="product-grid">
+            {paginatedProducts.length === 0 ? (
+              <div style={{gridColumn:'1/-1',textAlign:'center',padding:48}}>No products found</div>
+            ) : paginatedProducts.map((item) => (
+              <article key={item._id} className="product-card" onMouseEnter={()=>setHoveredProduct(item._id)} onMouseLeave={()=>setHoveredProduct(null)}>
+                <div style={{position:'relative',background:'var(--clr-bg-muted)'}}>
+                  <Link to={`/product/${item._id}`}>
+                    <img src={item.image?.[0]} alt={item.name} style={{width:'100%',height:260,objectFit:'cover',display:'block'}} />
+                  </Link>
                 </div>
-                <p className='font-light text-sm text-gray-800'>{item.name}</p>
-                <p className='font-semibold text-lg text-gray-900 mt-1'>${item.price}</p>
-              </Link>
-            ))
-          ) : (
-            <p className='font-light text-gray-600'>Loading products...</p>
+                <div style={{padding:12}}>
+                  <div style={{fontSize:12,color:'var(--clr-text-secondary)'}}>{item.category}</div>
+                  <Link to={`/product/${item._id}`}><div style={{fontSize:14,fontWeight:600,margin:'6px 0'}}>{item.name}</div></Link>
+                  <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                    <div style={{fontWeight:700}}>₹{item.price}</div>
+                    <button onClick={()=>addtocart?.(item._id, 'M')} style={{background:'#111',color:'#fff',padding:'8px 12px',borderRadius:8}}>Add</button>
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+
+          {totalPages > 1 && (
+            <div style={{display:'flex',justifyContent:'center',gap:8,marginTop:28}}>
+              <button onClick={() => setCurrentPage(Math.max(1, currentPage - 1))} disabled={currentPage === 1}>‹</button>
+              {Array.from({length: Math.min(5, totalPages)}, (_, i) => {
+                let pageNum
+                if (totalPages <= 5) pageNum = i + 1
+                else if (currentPage <= 3) pageNum = i + 1
+                else if (currentPage >= totalPages - 2) pageNum = totalPages - 4 + i
+                else pageNum = currentPage - 2 + i
+                return (
+                  <button key={pageNum} onClick={() => setCurrentPage(pageNum)} style={{padding:8,borderRadius:6,background: currentPage===pageNum ? '#111' : 'transparent',color: currentPage===pageNum ? '#fff' : '#111'}}>{pageNum}</button>
+                )
+              })}
+              <button onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))} disabled={currentPage === totalPages}>›</button>
+            </div>
           )}
-        </div>
+        </main>
       </div>
+
+      <footer className="collection-footer">© 2026 · ShopNest</footer>
     </div>
   )
 }

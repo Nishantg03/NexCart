@@ -6,7 +6,7 @@ const Footer = () => {
     <div className='border-t border-gray-300' style={{marginTop:'210px'}}>
         <div className='grid grid-cols-1 sm:grid-cols-3 gap-14 py-10 text-sm'>
             <div className='flex flex-col items-center text-center'>
-                <img src={assets.logo} className='mb-5 w-32' alt="" />
+                <span className='mb-5 inline-flex items-center justify-center font-extrabold tracking-tight text-4xl leading-none' style={{width:'128px', height:'auto'}}>NexCart</span>
                 <p className='w-full md:w-2/3 text-gray-600'>Lorem ipsum dolor sit amet consectetur adipisicing elit. Asperiores aut magnam doloremque sapiente deleniti, numquam tempora porro vel beatae saepe possimus ducimus, aspernatur provident eos ipsum hic blanditiis deserunt molestiae?</p>
             </div>
             <div className='flex flex-col items-center text-center'>
@@ -21,11 +21,11 @@ const Footer = () => {
             <div className='flex flex-col items-center text-center'>
                 <p className='text-lg font-semibold mb-5'>GET IN TOUCH</p>
                 <p className='text-gray-600 mb-4'>+1 (555) 123-456</p>
-                <p className='text-gray-600'>support@forever.com</p>
+                <p className='text-gray-600'>support@nexcart.com</p>
             </div>
         </div>
         <div className='border-t border-gray-300 py-6 text-center text-gray-600'>
-            <p>&copy; 2024 Your Store. All rights reserved.</p>
+            <p>&copy; 2024 NexCart. All rights reserved.</p>
         </div>
     </div>
   )
