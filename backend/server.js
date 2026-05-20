@@ -11,6 +11,7 @@ import Orderrouter from './routes/orderRoute.js';
 
 // app configuration
 const app = express();
+const port = process.env.PORT || 5000;
 
 let connectionsReady;
 
@@ -65,5 +66,21 @@ app.use((err, req, res, next) => {
     console.error('❌ Request failed:', err);
     res.status(500).json({ success: false, message: 'Internal server error' });
 });
+
+if (process.env.VERCEL !== '1') {
+    const startServer = async () => {
+        try {
+            await ensureConnections();
+            app.listen(port, () => {
+                console.log(`✅ Server is running on port ${port}`);
+            });
+        } catch (err) {
+            console.error('❌ Failed to start local server:', err);
+            process.exit(1);
+        }
+    };
+
+    startServer();
+}
 
 export default app;
