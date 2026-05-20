@@ -2,12 +2,12 @@ import { createContext, useEffect, useState, useCallback } from "react";
 import { toast } from "react-toastify";
 import axios from "axios";
 
-const backendURL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+const backendURL = (import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000').replace(/\/+$/, '');
 export const ShopContext = createContext({
     products: [],
     currency: '$',
     delivery_fee: 10,
-    backendUrl: import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000',
+    backendUrl: backendURL,
     
 });
 

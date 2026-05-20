@@ -7,7 +7,7 @@ import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 
-export const backendURL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000'
+export const backendURL = (import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000').replace(/\/+$/, '')
 export const currency = '$'
 const App = () => {
   const [token, settoken] = useState(localStorage.getItem('token') || '')
